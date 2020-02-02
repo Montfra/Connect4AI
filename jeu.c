@@ -7,14 +7,15 @@
 */
 #include <stdio.h>
 #include <stdlib.h>
-#include <math.h>
 #include <time.h>
 
 // Paramètres du jeu
-#define LARGEUR_MAX 9 		// nb max de fils pour un noeud (= nb max de coups possibles)
+#define LARGEUR_MAX 7 		// nb max de fils pour un noeud (= nb max de coups possibles)
 
 #define TEMPS 5		// temps de calcul pour un coup avec MCTS (en secondes)
 
+#define rows 8
+#define cols 7
 // macros
 #define AUTRE_JOUEUR(i) (1-(i))
 #define min(a, b)       ((a) < (b) ? (a) : (b))
@@ -31,7 +32,7 @@ typedef struct EtatSt {
 	// TODO: à compléter par la définition de l'état du jeu
 
 	/* par exemple, pour morpion: */
-	char plateau[3][3];	
+	char plateau[cols][rows];
 
 } Etat;
 
@@ -40,7 +41,7 @@ typedef struct {
 	// TODO: à compléter par la définition d'un coup 
 
 	/* par exemple, pour morpion: */
-	int ligne;
+	// int ligne;
 	int colonne;
 
 } Coup;
@@ -56,8 +57,8 @@ Etat * copieEtat( Etat * src ) {
 	
 	/* par exemple : */
 	int i,j;	
-	for (i=0; i< 3; i++)
-		for ( j=0; j<3; j++)
+	for (i=0; i< cols; i++)
+		for ( j=0; j<rows; j++)
 			etat->plateau[i][j] = src->plateau[i][j];
 	
 
@@ -73,8 +74,8 @@ Etat * etat_initial( void ) {
 	
 	/* par exemple : */
 	int i,j;	
-	for (i=0; i< 3; i++)
-		for ( j=0; j<3; j++)
+	for (i=0; i< cols; i++)
+		for ( j=0; j<rows; j++)
 			etat->plateau[i][j] = ' ';
 	
 	return etat;
@@ -88,18 +89,18 @@ void afficheJeu(Etat * etat) {
 	/* par exemple : */
 	int i,j;
 	printf("   |");
-	for ( j = 0; j < 3; j++) 
+	for ( j = 0; j < rows; j++)
 		printf(" %d |", j);
 	printf("\n");
-	printf("----------------");
+	printf("------------------------------------");
 	printf("\n");
 	
-	for(i=0; i < 3; i++) {
+	for(i=0; i < cols; i++) {
 		printf(" %d |", i);
-		for ( j = 0; j < 3; j++) 
+		for ( j = 0; j < rows; j++)
 			printf(" %c |", etat->plateau[i][j]);
 		printf("\n");
-		printf("----------------");
+		printf("------------------------------------");
 		printf("\n");
 	}
 }
@@ -107,13 +108,13 @@ void afficheJeu(Etat * etat) {
 
 // Nouveau coup 
 // TODO: adapter la liste de paramètres au jeu
-Coup * nouveauCoup( int i, int j ) {
+Coup * nouveauCoup( int j ) {
 	Coup * coup = (Coup *)malloc(sizeof(Coup));
 	
 	// TODO: à compléter avec la création d'un nouveau coup
 	
 	/* par exemple : */
-	coup->ligne = i;
+	// coup->ligne = i;
 	coup->colonne = j;
 	
 	return coup;
@@ -125,13 +126,11 @@ Coup * demanderCoup () {
 	// TODO...
 
 	/* par exemple : */
-	int i,j;
-	printf("\n quelle ligne ? ") ;
-	scanf("%d",&i); 
+	int j;
 	printf(" quelle colonne ? ") ;
 	scanf("%d",&j); 
 	
-	return nouveauCoup(i,j);
+	return nouveauCoup(j);
 }
 
 // Modifier l'état en jouant un coup 
@@ -139,18 +138,19 @@ Coup * demanderCoup () {
 int jouerCoup( Etat * etat, Coup * coup ) {
 
 	// TODO: à compléter
-	
-	/* par exemple : */
-	if ( etat->plateau[coup->ligne][coup->colonne] != ' ' )
-		return 0;
-	else {
-		etat->plateau[coup->ligne][coup->colonne] = etat->joueur ? 'O' : 'X';
-		
-		// à l'autre joueur de jouer
-		etat->joueur = AUTRE_JOUEUR(etat->joueur); 	
+	if (coup->colonne > rows) return 0;
 
-		return 1;
-	}	
+    for (int i = cols - 1; i >= 0; --i) {
+        if ( etat->plateau[i][coup->colonne] == ' ' ) {
+            etat->plateau[i][coup->colonne] = etat->joueur ? 'O' : 'X';
+
+            // à l'autre joueur de jouer
+            etat->joueur = AUTRE_JOUEUR(etat->joueur);
+
+            return 1;
+        }
+    }
+    return 0;
 }
 
 // Retourne une liste de coups possibles à partir d'un etat 
@@ -164,16 +164,15 @@ Coup ** coups_possibles( Etat * etat ) {
 	// TODO: à compléter
 	
 	/* par exemple */
-	int i,j;
-	for(i=0; i < 3; i++) {
-		for (j=0; j < 3; j++) {
-			if ( etat->plateau[i][j] == ' ' ) {
-				coups[k] = nouveauCoup(i,j); 
-				k++;
-			}
-		}
-	}
-	/* fin de l'exemple */
+    for (int i = 0; i < rows; ++i) {
+        for (int j = cols - 1; j >= 0 ; --j) {
+            if ( etat->plateau[j][i] == ' ' ) {
+                coups[k] = nouveauCoup(i);
+                k++;
+                break;
+            }
+        }
+    }
 	
 	coups[k] = NULL;
 
@@ -241,8 +240,8 @@ void freeNoeud ( Noeud * noeud) {
 		free (noeud->etat);
 		
 	while ( noeud->nb_enfants > 0 ) {
-		freeNoeud(noeud->enfants[noeud->nb_enfants-1]);
-		noeud->nb_enfants --;
+	    freeNoeud(noeud->enfants[noeud->nb_enfants-1]);
+		noeud->nb_enfants--;
 	}
 	if ( noeud->coup != NULL)
 		free(noeud->coup); 
@@ -261,43 +260,44 @@ FinDePartie testFin( Etat * etat ) {
 	
 	// tester si un joueur a gagné
 	int i,j,k,n = 0;
-	for ( i=0;i < 3; i++) {
-		for(j=0; j < 3; j++) {
+	for ( i=0;i < cols; i++) {
+		for(j=0; j < rows; j++) {
 			if ( etat->plateau[i][j] != ' ') {
 				n++;	// nb coups joués
-			
+
 				// lignes
 				k=0;
-				while ( k < 3 && i+k < 3 && etat->plateau[i+k][j] == etat->plateau[i][j] ) 
-					k++;
-				if ( k == 3 ) 
+				while ( k < 4 && i-k >= 0 && etat->plateau[i-k][j] == etat->plateau[i][j] )
+                    k++;
+				if ( k == 4 )
 					return etat->plateau[i][j] == 'O'? ORDI_GAGNE : HUMAIN_GAGNE;
 
 				// colonnes
 				k=0;
-				while ( k < 3 && j+k < 3 && etat->plateau[i][j+k] == etat->plateau[i][j] ) 
-					k++;
-				if ( k == 3 ) 
+				while ( k < 4 && j+k < 4 && etat->plateau[i][j+k] == etat->plateau[i][j] )
+				    k++;
+
+				if ( k == 4 )
 					return etat->plateau[i][j] == 'O'? ORDI_GAGNE : HUMAIN_GAGNE;
 
 				// diagonales
 				k=0;
-				while ( k < 3 && i+k < 3 && j+k < 3 && etat->plateau[i+k][j+k] == etat->plateau[i][j] ) 
+				while ( k < 4 && i-k >= 0 && j+k < 4 && etat->plateau[i-k][j+k] == etat->plateau[i][j] )
 					k++;
-				if ( k == 3 ) 
+				if ( k == 4 )
 					return etat->plateau[i][j] == 'O'? ORDI_GAGNE : HUMAIN_GAGNE;
 
 				k=0;
-				while ( k < 3 && i+k < 3 && j-k >= 0 && etat->plateau[i+k][j-k] == etat->plateau[i][j] ) 
+				while ( k < 4 && i-k >= 0 && j-k >= 0 && etat->plateau[i-k][j-k] == etat->plateau[i][j] )
 					k++;
-				if ( k == 3 ) 
+				if ( k == 4 )
 					return etat->plateau[i][j] == 'O'? ORDI_GAGNE : HUMAIN_GAGNE;		
 			}
 		}
 	}
 
 	// et sinon tester le match nul	
-	if ( n == 3*3 ) 
+	if ( n == 6*7 )
 		return MATCHNUL;
 		
 	return NON;
@@ -317,11 +317,11 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 	Coup * meilleur_coup ;
 	
 	// Créer l'arbre de recherche
-	Noeud * racine = nouveauNoeud(NULL, NULL);	
-	racine->etat = copieEtat(etat); 
+	Noeud * racine = nouveauNoeud(NULL, NULL);
+	racine->etat = copieEtat(etat);
 	
 	// créer les premiers noeuds:
-	coups = coups_possibles(racine->etat); 
+	coups = coups_possibles(racine->etat);
 	int k = 0;
 	Noeud * enfant;
 	while ( coups[k] != NULL) {
@@ -352,7 +352,7 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 		iter ++;
 	} while ( temps < tempsmax );
 	
-	/* fin de l'algorithme  */ 
+	fin de l'algorithme  */
 	
 	// Jouer le meilleur premier coup
 	jouerCoup(etat, meilleur_coup );
