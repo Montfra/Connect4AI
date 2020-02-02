@@ -203,6 +203,10 @@ typedef struct NoeudSt {
 // utiliser nouveauNoeud(NULL, NULL) pour créer la racine
 Noeud * nouveauNoeud (Noeud * parent, Coup * coup ) {
 	Noeud * noeud = (Noeud *)malloc(sizeof(Noeud));
+
+    for (int i = 0; i < LARGEUR_MAX; ++i) {
+        noeud->enfants[i] = NULL;
+    }
 	
 	if ( parent != NULL && coup != NULL ) {
 		noeud->etat = copieEtat ( parent->etat );
@@ -238,11 +242,14 @@ Noeud * ajouterEnfant(Noeud * parent, Coup * coup) {
 void freeNoeud ( Noeud * noeud) {
 	if ( noeud->etat != NULL)
 		free (noeud->etat);
-		
-	while ( noeud->nb_enfants > 0 ) {
-	    freeNoeud(noeud->enfants[noeud->nb_enfants-1]);
-		noeud->nb_enfants--;
+
+	int i = 0;
+	while (noeud->enfants[i] != NULL && i < LARGEUR_MAX) {
+        freeNoeud(noeud->enfants[i]);
+        i++;
 	}
+    noeud->nb_enfants = 0;
+	
 	if ( noeud->coup != NULL)
 		free(noeud->coup); 
 
