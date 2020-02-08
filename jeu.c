@@ -10,7 +10,7 @@
 #include <time.h>
 
 // Paramètres du jeu
-#define LARGEUR_MAX 7 		// nb max de fils pour un noeud (= nb max de coups possibles)
+#define LARGEUR_MAX 8 		// nb max de fils pour un noeud (= nb max de coups possibles)
 
 #define TEMPS 5		// temps de calcul pour un coup avec MCTS (en secondes)
 
@@ -310,7 +310,126 @@ FinDePartie testFin( Etat * etat ) {
 	return NON;
 }
 
+Noeud * selection(Noeud * racine, int * bes) {
+    int nbfils;
 
+    // Calcul le nombre de fils
+    Coup ** coups = coups_possibles(racine->etat);
+    int k = 0;
+    while ( coups[k] != NULL) {
+        k++;
+    }
+
+    nbfils = k;
+
+    if (nbfils == racine->nb_enfants && nbfils != 0) {
+        // Tous les fils sont déjà developé
+
+        // Choix du meilleur fils
+        float actualRatio;
+        float bestRatio;
+        int best = 0;
+
+        if (racine->enfants[0]->nb_simus == 0) {
+            bestRatio = 1;
+        }
+        else {
+            bestRatio = ((float)racine->enfants[0]->nb_victoires) / ((float)racine->enfants[0]->nb_simus);
+        }
+
+        for (int i = 0; i < racine->nb_enfants; i++) {
+
+            if (racine->enfants[i]->nb_simus == 0) {
+                actualRatio = 1;
+            }
+            else {
+                actualRatio = ((float)racine->enfants[i]->nb_victoires) / ((float)racine->enfants[i]->nb_simus);
+            }
+
+            printf(" nb vic %i / nb simu %i ->  best %f| actual %f\n", racine->enfants[i]->nb_victoires, racine->enfants[i]->nb_simus, bestRatio, actualRatio);
+
+            if (bestRatio < actualRatio) {
+                bestRatio = actualRatio;
+                best = i;
+            }
+        }
+
+        // printf("node selected %i\n", best);
+
+        if (bes != NULL) {
+            *bes = best;
+        }
+
+        return selection(racine->enfants[best], NULL);
+
+    }
+    else {
+        // Tous les fils ne sont pas envore developé
+        return racine;
+        // ajouterEnfant(racine, coups[racine->nb_enfants]);
+    }
+
+}
+
+void developper(Noeud * noeud) {
+    // Choisit un fils aléatoirement
+    Coup ** coups = coups_possibles(noeud->etat);
+    /*int k = 0;
+    while ( coups[k] != NULL) {
+        printf("NFDS %i\n", coups[k]->colonne);
+        k++;}*/
+    Coup * meilleur_coup = coups[ noeud->nb_enfants ];
+
+    // printf("Aléa %i\n", meilleur_coup->colonne);
+
+    // Developper ce fils
+    ajouterEnfant(noeud, meilleur_coup);
+}
+
+int simuler(Noeud * noeud) {
+    FinDePartie fin;
+    int res = 0;
+    fin = testFin( noeud->etat );
+    while ( fin == NON ) {
+        jouerCoup(noeud->enfants[noeud->nb_enfants-1]->etat, noeud->coup);
+        noeud = noeud->enfants[noeud->nb_enfants-1];
+        developper(noeud);
+        res++;
+        fin = testFin( noeud->etat );
+    }
+    printf("NB Simu %i\n", res);
+
+    if (fin != ORDI_GAGNE || fin == MATCHNUL) {
+        res = MATCHNUL;
+        // printf("LOOSE\n");
+    }
+    else {
+        res = ORDI_GAGNE;
+        // printf("WIN\n");
+    }
+
+    // afficheJeu(noeud->etat);
+
+    return res;
+}
+
+void update(Noeud * noeud, int resultat) {
+    while (noeud->parent != NULL) {
+        noeud->nb_simus++;
+
+        if ( resultat == ORDI_GAGNE ) {
+            noeud->nb_victoires++;
+        }
+
+        noeud = noeud->parent;
+    }
+
+    noeud->nb_simus++;
+
+    if ( resultat == ORDI_GAGNE ) {
+        noeud->nb_victoires++;
+    }
+}
 
 // Calcule et joue un coup de l'ordinateur avec MCTS-UCT
 // en tempsmax secondes
@@ -326,44 +445,107 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 	// Créer l'arbre de recherche
 	Noeud * racine = nouveauNoeud(NULL, NULL);
 	racine->etat = copieEtat(etat);
-	
+
 	// créer les premiers noeuds:
 	coups = coups_possibles(racine->etat);
 	int k = 0;
-	Noeud * enfant;
+	Noeud * enfants;
 	while ( coups[k] != NULL) {
-		enfant = ajouterEnfant(racine, coups[k]);
+		enfants = ajouterEnfant(racine, coups[k]);
 		k++;
 	}
-	
-	
-	meilleur_coup = coups[ rand()%k ]; // choix aléatoire
+
+
+	// meilleur_coup = coups[ rand()%k ]; // choix aléatoire
 	
 	/*  TODO :
 		- supprimer la sélection aléatoire du meilleur coup ci-dessus
-		- implémenter l'algorithme MCTS-UCT pour déterminer le meilleur coup ci-dessous
+		- implémenter l'algorithme MCTS-UCT pour déterminer le meilleur coup ci-dessous*/
 
 	int iter = 0;
-	
+    int best;
 	do {
 	
-	
-	
-		// à compléter par l'algorithme MCTS-UCT... 
-	
-	
-	
+	    // Selection
+	    Noeud * actualRacine = selection(racine, &best);
+
+	    developper(actualRacine);
+
+	    int res = simuler(actualRacine);
+
+	    update(actualRacine, res);
+
+        // actualRacine = selection(racine, meilleur_coup);
+
+        printf(" meilleur coup %i\n", best);
+
+       /* meilleur_coup = actualRacine->enfants[index]->coup;
+        printf("JOUERU %i \n", actualRacine->etat->joueur);
+        printf("MEILLEUR COUP %i\n", meilleur_coup->colonne);
+        jouerCoup(actualRacine->etat, meilleur_coup);
+        printf("JOUERU %i \n\n", actualRacine->etat->joueur);
+	    // Expansion
+        if (testFin( actualRacine->etat) == NON) {
+            coups = coups_possibles(actualRacine->etat);
+
+            ajouterEnfant(actualRacine, coups[0]);
+
+            // jouerCoup(actualRacine->etat, coups[0]);
+
+            actualRacine = actualRacine->enfants[0];
+            //  Simulation
+            int sizeBranche = 0;
+            while ( fin = testFin( actualRacine->etat) == NON ) {
+                coups = coups_possibles(actualRacine->etat);
+                ajouterEnfant(actualRacine, coups[0]);
+                jouerCoup(actualRacine->etat, coups[0]);
+                actualRacine = actualRacine->enfants[0];
+                sizeBranche++;
+                // printf("%i\n", actualRacine->coup->colonne);
+            }
+
+            printf(" sb -> %i\n", sizeBranche);
+
+            // Back propagation
+
+            sizeBranche = 0;
+            while (actualRacine->parent != NULL) {
+                actualRacine->nb_simus++;
+
+                if ( fin != ORDI_GAGNE && fin != MATCHNUL) {
+                    actualRacine->nb_victoires++;
+                }
+
+                actualRacine = actualRacine->parent;
+
+                sizeBranche++;
+            }
+
+            actualRacine->nb_simus++;
+
+            if ( fin != ORDI_GAGNE && fin != MATCHNUL) {
+                actualRacine->nb_victoires++;
+            }
+
+            // printf(" qsdqds|  %i\n", sizeBranche);
+        }
+        else {
+            // if (testFin( actualRacine->etat) == HUMAIN_GAGNE) printf("GAGNE\n");
+            if (testFin( actualRacine->etat) == ORDI_GAGNE) printf("PERDU\n");
+            if (testFin( actualRacine->etat) == MATCHNUL) printf("NULL\n");
+        }
+
+*/
 	
 		toc = clock(); 
 		temps = (int)( ((double) (toc - tic)) / CLOCKS_PER_SEC );
 		iter ++;
-	} while ( temps < tempsmax );
+	} while ( temps < tempsmax && iter < 10);
 	
-	fin de l'algorithme  */
+	// fin de l'algorithme
 	
 	// Jouer le meilleur premier coup
-	jouerCoup(etat, meilleur_coup );
-	
+	jouerCoup(etat, coups[best] );
 	// Penser à libérer la mémoire :
 	freeNoeud(racine);
 	free (coups);
