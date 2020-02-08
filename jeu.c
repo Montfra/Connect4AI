@@ -346,7 +346,7 @@ Noeud * selection(Noeud * racine, int * bes) {
                 actualRatio = ((float)racine->enfants[i]->nb_victoires) / ((float)racine->enfants[i]->nb_simus);
             }
 
-            printf(" nb vic %i / nb simu %i ->  best %f| actual %f\n", racine->enfants[i]->nb_victoires, racine->enfants[i]->nb_simus, bestRatio, actualRatio);
+            // printf(" nb vic %i / nb simu %i ->  best %f| actual %f\n", racine->enfants[i]->nb_victoires, racine->enfants[i]->nb_simus, bestRatio, actualRatio);
 
             if (bestRatio < actualRatio) {
                 bestRatio = actualRatio;
@@ -390,14 +390,14 @@ int simuler(Noeud * noeud) {
     FinDePartie fin;
     int res = 0;
     fin = testFin( noeud->etat );
-    while ( fin == NON ) {
+    while ( fin == NON && noeud->enfants[noeud->nb_enfants-1]->etat != NULL) {
         jouerCoup(noeud->enfants[noeud->nb_enfants-1]->etat, noeud->coup);
         noeud = noeud->enfants[noeud->nb_enfants-1];
         developper(noeud);
         res++;
         fin = testFin( noeud->etat );
     }
-    printf("NB Simu %i\n", res);
+    // printf("NB Simu %i\n", res);
 
     if (fin != ORDI_GAGNE || fin == MATCHNUL) {
         res = MATCHNUL;
@@ -440,6 +440,7 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 	int temps;
 
 	Coup ** coups;
+	Coup ** coups2;
 	Coup * meilleur_coup ;
 	
 	// Créer l'arbre de recherche
@@ -466,81 +467,30 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
     int best;
 	do {
 	
-	    // Selection
+	    // MCTS
 	    Noeud * actualRacine = selection(racine, &best);
 
-	    developper(actualRacine);
+	    // TO DELETE
+        coups2 = coups_possibles(actualRacine->etat);
+        int k = 0;
+        while ( coups2[k] != NULL) {k++;}
 
-	    int res = simuler(actualRacine);
+        if (k <= 0) { break; }
+        // END TO DELETE
 
-	    update(actualRacine, res);
 
-        // actualRacine = selection(racine, meilleur_coup);
+        developper(actualRacine);
 
-        printf(" meilleur coup %i\n", best);
+        int res = simuler(actualRacine);
 
-       /* meilleur_coup = actualRacine->enfants[index]->coup;
-        printf("JOUERU %i \n", actualRacine->etat->joueur);
-        printf("MEILLEUR COUP %i\n", meilleur_coup->colonne);
-        jouerCoup(actualRacine->etat, meilleur_coup);
-        printf("JOUERU %i \n\n", actualRacine->etat->joueur);
-	    // Expansion
-        if (testFin( actualRacine->etat) == NON) {
-            coups = coups_possibles(actualRacine->etat);
+        update(actualRacine, res);
 
-            ajouterEnfant(actualRacine, coups[0]);
-
-            // jouerCoup(actualRacine->etat, coups[0]);
-
-            actualRacine = actualRacine->enfants[0];
-            //  Simulation
-            int sizeBranche = 0;
-            while ( fin = testFin( actualRacine->etat) == NON ) {
-                coups = coups_possibles(actualRacine->etat);
-                ajouterEnfant(actualRacine, coups[0]);
-                jouerCoup(actualRacine->etat, coups[0]);
-                actualRacine = actualRacine->enfants[0];
-                sizeBranche++;
-                // printf("%i\n", actualRacine->coup->colonne);
-            }
-
-            printf(" sb -> %i\n", sizeBranche);
-
-            // Back propagation
-
-            sizeBranche = 0;
-            while (actualRacine->parent != NULL) {
-                actualRacine->nb_simus++;
-
-                if ( fin != ORDI_GAGNE && fin != MATCHNUL) {
-                    actualRacine->nb_victoires++;
-                }
-
-                actualRacine = actualRacine->parent;
-
-                sizeBranche++;
-            }
-
-            actualRacine->nb_simus++;
-
-            if ( fin != ORDI_GAGNE && fin != MATCHNUL) {
-                actualRacine->nb_victoires++;
-            }
-
-            // printf(" qsdqds|  %i\n", sizeBranche);
-        }
-        else {
-            // if (testFin( actualRacine->etat) == HUMAIN_GAGNE) printf("GAGNE\n");
-            if (testFin( actualRacine->etat) == ORDI_GAGNE) printf("PERDU\n");
-            if (testFin( actualRacine->etat) == MATCHNUL) printf("NULL\n");
-        }
-
-*/
+        // printf(" meilleur coup %i\n", best);
 	
 		toc = clock(); 
 		temps = (int)( ((double) (toc - tic)) / CLOCKS_PER_SEC );
 		iter ++;
-	} while ( temps < tempsmax && iter < 10);
+	} while ( temps < tempsmax);
 	
 	// fin de l'algorithme
 	
