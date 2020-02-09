@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <math.h>
 
 // Paramètres du jeu
 #define LARGEUR_MAX 8 		// nb max de fils pour un noeud (= nb max de coups possibles)
@@ -224,7 +225,7 @@ Noeud * nouveauNoeud (Noeud * parent, Coup * coup ) {
 	
 	// POUR MCTS:
 	noeud->nb_victoires = 0;
-	noeud->nb_simus = 0;	
+	noeud->nb_simus = 1;
 	
 
 	return noeud; 	
@@ -310,6 +311,24 @@ FinDePartie testFin( Etat * etat ) {
 	return NON;
 }
 
+float mu(Noeud * i) {
+    return (float)i->nb_victoires / (float)i->nb_simus;
+}
+
+float B(Noeud * i) {
+    float N = i->nb_simus;
+    float NParent = i->parent->nb_simus;
+    float C = sqrt(2);
+    float u = mu(i);
+
+    float B = u + C * sqrt( log(NParent) / N );
+
+    if (i->parent->etat->joueur == 0){ B *= -1; }
+
+    return B;
+}
+
+
 Noeud * selection(Noeud * racine, int * bes) {
     int nbfils;
 
@@ -327,26 +346,14 @@ Noeud * selection(Noeud * racine, int * bes) {
 
         // Choix du meilleur fils
         float actualRatio;
-        float bestRatio;
+        float bestRatio = B(racine->enfants[0]);
         int best = 0;
-
-        if (racine->enfants[0]->nb_simus == 0) {
-            bestRatio = 1;
-        }
-        else {
-            bestRatio = ((float)racine->enfants[0]->nb_victoires) / ((float)racine->enfants[0]->nb_simus);
-        }
 
         for (int i = 0; i < racine->nb_enfants; i++) {
 
-            if (racine->enfants[i]->nb_simus == 0) {
-                actualRatio = 1;
-            }
-            else {
-                actualRatio = ((float)racine->enfants[i]->nb_victoires) / ((float)racine->enfants[i]->nb_simus);
-            }
+            actualRatio = B(racine->enfants[i]);
 
-            // printf(" nb vic %i / nb simu %i ->  best %f| actual %f\n", racine->enfants[i]->nb_victoires, racine->enfants[i]->nb_simus, bestRatio, actualRatio);
+            // printf(" nb vic %i / nb simu %i   |||   B %f\n", racine->enfants[i]->nb_victoires, racine->enfants[i]->nb_simus, actualRatio);
 
             if (bestRatio < actualRatio) {
                 bestRatio = actualRatio;
