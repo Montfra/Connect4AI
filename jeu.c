@@ -13,7 +13,7 @@
 // Paramètres du jeu
 #define LARGEUR_MAX 8 		// nb max de fils pour un noeud (= nb max de coups possibles)
 
-#define TEMPS 10		// temps de calcul pour un coup avec MCTS (en secondes)
+#define TEMPS 5		// temps de calcul pour un coup avec MCTS (en secondes)
 
 #define rows 8
 #define cols 7
@@ -282,7 +282,7 @@ FinDePartie testFin( Etat * etat ) {
 
 				// colonnes
 				k=0;
-				while ( k < 4 && j+k < 4 && etat->plateau[i][j+k] == etat->plateau[i][j] )
+				while ( k < 4 && j-k >= 0 && etat->plateau[i][j-k] == etat->plateau[i][j] )
 				    k++;
 
 				if ( k == 4 )
@@ -290,7 +290,7 @@ FinDePartie testFin( Etat * etat ) {
 
 				// diagonales
 				k=0;
-				while ( k < 4 && i-k >= 0 && j+k < 4 && etat->plateau[i-k][j+k] == etat->plateau[i][j] )
+				while ( k < 4 && i-k >= 0 && j+k < rows && etat->plateau[i-k][j+k] == etat->plateau[i][j] )
 					k++;
 				if ( k == 4 )
 					return etat->plateau[i][j] == 'O'? ORDI_GAGNE : HUMAIN_GAGNE;
@@ -316,6 +316,11 @@ float mu(Noeud * i) {
     if (i->nb_simus == 0) {
         return 0;
     }
+
+    if(i->parent->etat->joueur == 0) {
+        return (float)((float)i->nb_simus - (float)i->nb_victoires) / (float)i->nb_simus;
+    }
+
     return (float)i->nb_victoires / (float)i->nb_simus;
 }
 
@@ -327,7 +332,7 @@ float B(Noeud * i) {
 
     float B = u + C * sqrt( log(NParent) / N );
 
-    if (i->parent->etat->joueur == 0 && N > 0){ B *= -1; }
+    // if (i->parent->etat->joueur == 0 && N > 0){ B *= -1; }
 
     return B;
 }
@@ -355,12 +360,12 @@ Noeud * selection(Noeud * racine, int * bes) {
         int best = 0;
 
 
-        // printf("\n\nNEW FILS\n");
+        printf("\n\nNEW FILS\n");
         for (int i = 0; i < racine->nb_enfants; i++) {
 
             actualRatio = B(racine->enfants[i]);
 
-            // printf("for %i -- nb vic %i / nb simu %i   |||   B %f\n", i, racine->enfants[i]->nb_victoires, racine->enfants[i]->nb_simus, actualRatio);
+            printf("for %i -- nb vic %i / nb simu %i   |||   B %f\n", i, racine->enfants[i]->nb_victoires, racine->enfants[i]->nb_simus, actualRatio);
 
             if (bestRatio < actualRatio) {
                 bestRatio = actualRatio;
@@ -376,7 +381,7 @@ Noeud * selection(Noeud * racine, int * bes) {
             }
         }
 
-        // printf("node selected %i\n", best);
+        printf("node selected %i\n", best);
 
         if (bes != NULL) {
             *bes = best;
