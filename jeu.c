@@ -360,12 +360,12 @@ Noeud * selection(Noeud * racine, int * bes) {
         int best = 0;
 
 
-        printf("\n\nNEW FILS\n");
+        // printf("\n\nNEW FILS\n");
         for (int i = 0; i < racine->nb_enfants; i++) {
 
             actualRatio = B(racine->enfants[i]);
 
-            printf("for %i -- nb vic %i / nb simu %i   |||   B %f\n", i, racine->enfants[i]->nb_victoires, racine->enfants[i]->nb_simus, actualRatio);
+            // printf("for %i -- nb vic %i / nb simu %i   |||   B %f\n", i, racine->enfants[i]->nb_victoires, racine->enfants[i]->nb_simus, actualRatio);
 
             if (bestRatio < actualRatio) {
                 bestRatio = actualRatio;
@@ -381,7 +381,7 @@ Noeud * selection(Noeud * racine, int * bes) {
             }
         }
 
-        printf("node selected %i\n", best);
+        // printf("node selected %i\n", best);
 
         if (bes != NULL) {
             *bes = best;
@@ -461,7 +461,7 @@ void developper(Noeud * noeud) {
     ajouterEnfant(noeud, meilleur_coup);
 }
 
-int simuler(Noeud * noeud) {
+FinDePartie simuler(Noeud * noeud) {
     FinDePartie fin;
     int res = 0;
     fin = testFin( noeud->etat );
@@ -488,23 +488,22 @@ int simuler(Noeud * noeud) {
         res++;
         fin = testFin( noeud->etat );
     }
-    // printf("NB Simu %i\n", res);
+    // printf("Nombre de simulation %i\n", res);
 
     if (fin == ORDI_GAGNE) {
-        res = ORDI_GAGNE;
-        // printf("LOOSE\n");
+        fin = ORDI_GAGNE;
     }
     else {
-        res = MATCHNUL;
+        fin = MATCHNUL;
         // printf("WIN\n");
     }
 
     // afficheJeu(noeud->etat);
 
-    return res;
+    return fin;
 }
 
-void update(Noeud * noeud, int resultat) {
+void update(Noeud * noeud, FinDePartie resultat) {
 
     /*if (resultat == ORDI_GAGNE) {
         printf("GAGNAT\n");
@@ -563,6 +562,7 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 		- implémenter l'algorithme MCTS-UCT pour déterminer le meilleur coup ci-dessous*/
 
 	int iter = 0;
+	int win = 0;
     int best;
 	do {
 	
@@ -574,7 +574,12 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 
         developper(actualRacine);
 
-        int res = simuler(actualRacine);
+        FinDePartie res = simuler(actualRacine);
+
+
+        if (res == ORDI_GAGNE) {
+            win++;
+        }
 
         update(actualRacine, res);
 
@@ -584,7 +589,9 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 		temps = (int)( ((double) (toc - tic)) / CLOCKS_PER_SEC );
 		iter ++;
 	} while ( temps < tempsmax);
-	
+
+	printf("Nombre de simulation %i\n", iter);
+	printf("Pourcentage de chance de ganger %f %%", ((float)racine->nb_victoires / (float)racine->nb_simus) * 100.0f);
 	// fin de l'algorithme
 	
 	// Jouer le meilleur premier coup
