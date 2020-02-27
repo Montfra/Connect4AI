@@ -565,7 +565,25 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 	int win = 0;
     int best;
 	do {
-	
+
+
+	    // AMELIORATION
+	    if (iter == 0) {
+	        int test = 0;
+            for (int i = 0; i < racine->nb_enfants; ++i) {
+                if (testFin(racine->enfants[i]->etat) == ORDI_GAGNE) {
+                    best = i;
+                    test = 1;
+                }
+            }
+
+            if (test == 1) {
+                break;
+            }
+	    }
+	    // FIN AMELIORATION
+
+
 	    // MCTS
 	    Noeud * actualRacine = selection(racine, &best);
 
