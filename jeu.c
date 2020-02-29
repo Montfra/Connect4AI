@@ -28,21 +28,14 @@ typedef enum {NON, MATCHNUL, ORDI_GAGNE, HUMAIN_GAGNE } FinDePartie;
 // Definition du type Etat (état/position du jeu)
 typedef struct EtatSt {
 
-	int joueur; // à qui de jouer ? 
+	int joueur; // à qui de jouer ?
 
-	// TODO: à compléter par la définition de l'état du jeu
-
-	/* par exemple, pour morpion: */
 	char plateau[cols][rows];
 
 } Etat;
 
 // Definition du type Coup
 typedef struct {
-	// TODO: à compléter par la définition d'un coup 
-
-	/* par exemple, pour morpion: */
-	// int ligne;
 	int colonne;
 
 } Coup;
@@ -53,11 +46,7 @@ Etat * copieEtat( Etat * src ) {
 
 	etat->joueur = src->joueur;
 	
-		
-	// TODO: à compléter avec la copie de l'état src dans etat
-	
-	/* par exemple : */
-	int i,j;	
+	int i,j;
 	for (i=0; i< cols; i++)
 		for ( j=0; j<rows; j++)
 			etat->plateau[i][j] = src->plateau[i][j];
@@ -70,10 +59,8 @@ Etat * copieEtat( Etat * src ) {
 // Etat initial 
 Etat * etat_initial( void ) {
 	Etat * etat = (Etat *)malloc(sizeof(Etat));
-	
-	// TODO: à compléter avec la création de l'état initial
-	
-	/* par exemple : */
+
+
 	int i,j;	
 	for (i=0; i< cols; i++)
 		for ( j=0; j<rows; j++)
@@ -85,9 +72,6 @@ Etat * etat_initial( void ) {
 
 void afficheJeu(Etat * etat) {
 
-	// TODO: à compléter
-
-	/* par exemple : */
 	int i,j;
 	printf("   |");
 	for ( j = 0; j < rows; j++)
@@ -108,14 +92,9 @@ void afficheJeu(Etat * etat) {
 
 
 // Nouveau coup 
-// TODO: adapter la liste de paramètres au jeu
 Coup * nouveauCoup( int j ) {
 	Coup * coup = (Coup *)malloc(sizeof(Coup));
 	
-	// TODO: à compléter avec la création d'un nouveau coup
-	
-	/* par exemple : */
-	// coup->ligne = i;
 	coup->colonne = j;
 	
 	return coup;
@@ -123,11 +102,7 @@ Coup * nouveauCoup( int j ) {
 
 // Demander à l'humain quel coup jouer 
 Coup * demanderCoup () {
-
-	// TODO...
-
-	/* par exemple : */
-	int j;
+    int j;
 	printf(" quelle colonne ? ") ;
 	scanf("%d",&j); 
 	
@@ -138,7 +113,6 @@ Coup * demanderCoup () {
 // retourne 0 si le coup n'est pas possible
 int jouerCoup( Etat * etat, Coup * coup ) {
 
-	// TODO: à compléter
 	if (coup->colonne > rows) return 0;
 
     for (int i = cols - 1; i >= 0; --i) {
@@ -162,9 +136,6 @@ Coup ** coups_possibles( Etat * etat ) {
 	
 	int k = 0;
 	
-	// TODO: à compléter
-	
-	/* par exemple */
     for (int i = 0; i < rows; ++i) {
         for (int j = cols - 1; j >= 0 ; --j) {
             if ( etat->plateau[j][i] == ' ' ) {
@@ -262,11 +233,7 @@ void freeNoeud ( Noeud * noeud) {
 // et retourne NON, MATCHNUL, ORDI_GAGNE ou HUMAIN_GAGNE
 FinDePartie testFin( Etat * etat ) {
 
-	// TODO...
-	
-	/* par exemple	*/
-	
-	// tester si un joueur a gagné
+    // tester si un joueur a gagné
 	int i,j,k,n = 0;
 	for ( i=0;i < cols; i++) {
 		for(j=0; j < rows; j++) {
@@ -332,8 +299,6 @@ float B(Noeud * i) {
 
     float B = u + C * sqrt( log(NParent) / N );
 
-    // if (i->parent->etat->joueur == 0 && N > 0){ B *= -1; }
-
     return B;
 }
 
@@ -350,7 +315,6 @@ Noeud * selection(Noeud * racine, int * bes) {
 
     nbfils = k;
 
-    // printf("DEBUG nbfils = %i -- calculnbFils = %i\n", racine->nb_enfants, nbfils);
     if (nbfils == racine->nb_enfants && nbfils != 0) {
         // Tous les fils sont déjà developé
 
@@ -360,12 +324,9 @@ Noeud * selection(Noeud * racine, int * bes) {
         int best = 0;
 
 
-        // printf("\n\nNEW FILS\n");
         for (int i = 0; i < racine->nb_enfants; i++) {
 
             actualRatio = B(racine->enfants[i]);
-
-            // printf("for %i -- nb vic %i / nb simu %i   |||   B %f\n", i, racine->enfants[i]->nb_victoires, racine->enfants[i]->nb_simus, actualRatio);
 
             if (bestRatio < actualRatio) {
                 bestRatio = actualRatio;
@@ -381,8 +342,6 @@ Noeud * selection(Noeud * racine, int * bes) {
             }
         }
 
-        // printf("node selected %i\n", best);
-
         if (bes != NULL) {
             *bes = best;
         }
@@ -391,9 +350,8 @@ Noeud * selection(Noeud * racine, int * bes) {
 
     }
     else {
-        // Tous les fils ne sont pas envore developé
+        // Tous les fils ne sont pas encore developé
         return racine;
-        // ajouterEnfant(racine, coups[racine->nb_enfants]);
     }
 
 }
@@ -403,14 +361,12 @@ int choixRandomDev(Noeud * noeud) {
     Coup ** coups = coups_possibles(noeud->etat);
     int k = 0;
     while ( coups[k] != NULL) {
-        // printf("%i\n", k);
         k++;
     }
 
     if (k == 0) {return -1;}
 
     int choix = -1;
-    // printf("nb coups %i\n", k);
     while (choix == -1) {
         choix = rand() % k;
 
@@ -428,7 +384,6 @@ int choixRandom(Noeud * noeud) {
     Coup ** coups = coups_possibles(noeud->etat);
     int k = 0;
     while ( coups[k] != NULL) {
-        // printf("%i\n", k);
         k++;
     }
 
@@ -438,8 +393,6 @@ int choixRandom(Noeud * noeud) {
 }
 
 void developper(Noeud * noeud) {
-    /*printf("DEVELOPER\n");
-    afficheJeu(noeud->etat);*/
     // Choisit un fils aléatoirement
     Coup ** coups = coups_possibles(noeud->etat);
 
@@ -447,15 +400,7 @@ void developper(Noeud * noeud) {
 
     if (choix == -1) return;
 
-    // printf("choix %i\n", choix);
-
-    /*int k = 0;
-    while ( coups[k] != NULL) {
-        printf("NFDS %i\n", coups[k]->colonne);
-        k++;}*/
     Coup * meilleur_coup = coups[ choix ];
-    // printf("cc %i %i || %i\n", choix, coups[ choix ]->colonne, k);
-    // printf("Aléa %i\n", meilleur_coup->colonne);
 
     // Developper ce fils
     ajouterEnfant(noeud, meilleur_coup);
@@ -473,8 +418,6 @@ FinDePartie simuler(Noeud * noeud) {
             break;
         }
 
-        // int re =jouerCoup(noeud->enfants[choix]->etat, noeud->coup);
-        // if (re == 0) {printf("dsqdsqsdlkqsjfdlqkzjefdkmzefjsdzl\n");}
         noeud = noeud->enfants[choix];
 
         if (noeud->parent->joueur == 1) {
@@ -488,30 +431,19 @@ FinDePartie simuler(Noeud * noeud) {
         res++;
         fin = testFin( noeud->etat );
     }
-    // printf("Nombre de simulation %i\n", res);
 
     if (fin == ORDI_GAGNE) {
         fin = ORDI_GAGNE;
     }
     else {
         fin = MATCHNUL;
-        // printf("WIN\n");
     }
-
-    // afficheJeu(noeud->etat);
 
     return fin;
 }
 
 void update(Noeud * noeud, FinDePartie resultat) {
 
-    /*if (resultat == ORDI_GAGNE) {
-        printf("GAGNAT\n");
-    }
-    else {
-        printf("PERDANT\n");
-    }
-    afficheJeu(noeud->etat);*/
     while (noeud->parent != NULL) {
         noeud->nb_simus++;
 
@@ -538,8 +470,6 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 	int temps;
 
 	Coup ** coups;
-	Coup ** coups2;
-	Coup * meilleur_coup ;
 	
 	// Créer l'arbre de recherche
 	Noeud * racine = nouveauNoeud(NULL, NULL);
@@ -554,12 +484,6 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 		k++;
 	}
 
-
-	// meilleur_coup = coups[ rand()%k ]; // choix aléatoire
-	
-	/*  TODO :
-		- supprimer la sélection aléatoire du meilleur coup ci-dessus
-		- implémenter l'algorithme MCTS-UCT pour déterminer le meilleur coup ci-dessous*/
 
 	int iter = 0;
 	int win = 0;
@@ -587,9 +511,6 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 	    // MCTS
 	    Noeud * actualRacine = selection(racine, &best);
 
-        /*printf("AFFICHAGE MAIN");
-        afficheJeu(actualRacine->etat);*/
-
         developper(actualRacine);
 
         FinDePartie res = simuler(actualRacine);
@@ -601,14 +522,12 @@ void ordijoue_mcts(Etat * etat, int tempsmax) {
 
         update(actualRacine, res);
 
-        // printf(" meilleur coup %i\n", best);
-	
 		toc = clock(); 
 		temps = (int)( ((double) (toc - tic)) / CLOCKS_PER_SEC );
 		iter ++;
 	} while ( temps < tempsmax);
 
-	printf("Nombre de simulation %i\n", iter);
+	printf("Nombre de simulation %i\n", racine->nb_simus);
 	printf("Pourcentage de chance de ganger %f %%", ((float)racine->nb_victoires / (float)racine->nb_simus) * 100.0f);
 	// fin de l'algorithme
 	
